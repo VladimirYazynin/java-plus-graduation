@@ -8,6 +8,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class EndpointHitDto {
+
     private Long id;
     private String app;
     private String uri;
