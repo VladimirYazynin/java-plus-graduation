@@ -8,12 +8,18 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import ru.practicum.ewm.EndpointHitDto;
-import ru.practicum.ewm.ViewStatsDto;
+import ru.practicum.ewm.dto.EndpointHitDto;
+import ru.practicum.ewm.dto.ViewStatsDto;
 import ru.practicum.ewm.category.repository.CategoryRepository;
 import ru.practicum.ewm.enums.Sort;
 import ru.practicum.ewm.enums.State;
-import ru.practicum.ewm.event.dto.*;
+import ru.practicum.ewm.event.dto.EventFullDto;
+import ru.practicum.ewm.event.dto.EventRequestStatusUpdateRequest;
+import ru.practicum.ewm.event.dto.EventRequestStatusUpdateResult;
+import ru.practicum.ewm.event.dto.EventShortDto;
+import ru.practicum.ewm.event.dto.NewEventDto;
+import ru.practicum.ewm.event.dto.UpdateEventAdminRequest;
+import ru.practicum.ewm.event.dto.UpdateEventUserRequest;
 import ru.practicum.ewm.event.mapper.EventMapper;
 import ru.practicum.ewm.event.model.Event;
 import ru.practicum.ewm.event.model.QEvent;
@@ -27,25 +33,35 @@ import ru.practicum.ewm.request.dto.ParticipationRequestDto;
 import ru.practicum.ewm.request.mapper.RequestMapper;
 import ru.practicum.ewm.request.model.ParticipationRequest;
 import ru.practicum.ewm.request.repository.RequestRepository;
-import ru.practicum.ewm.stats.StatService;
 import ru.practicum.ewm.user.model.User;
 import ru.practicum.ewm.user.repository.UserRepository;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static org.springframework.data.domain.Sort.Direction.ASC;
 import static ru.practicum.ewm.enums.Sort.EVENT_DATE;
 import static ru.practicum.ewm.enums.Sort.VIEWS;
-import static ru.practicum.ewm.enums.State.*;
+import static ru.practicum.ewm.enums.State.CANCELED;
+import static ru.practicum.ewm.enums.State.CONFIRMED;
+import static ru.practicum.ewm.enums.State.PENDING;
+import static ru.practicum.ewm.enums.State.PUBLISHED;
+import static ru.practicum.ewm.enums.State.PUBLISH_EVENT;
+import static ru.practicum.ewm.enums.State.REJECTED;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class EventServiceImpl implements EventService {
+
     private final EventRepository eventRepository;
     private final LocationRepository locationRepository;
     private final UserRepository userRepository;
@@ -53,7 +69,7 @@ public class EventServiceImpl implements EventService {
     private final RequestRepository requestRepository;
     private final RequestMapper requestMapper;
     private final CategoryRepository categoryRepository;
-    private final StatService statsService;
+    private final StatClient statClient;
     private final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
     @Override
@@ -402,18 +418,18 @@ public class EventServiceImpl implements EventService {
         endpointHit.setIp(request.getRemoteAddr());
         endpointHit.setUri(request.getRequestURI());
         endpointHit.setTimestamp(LocalDateTime.now().format(formatter));
-        EndpointHitDto saved = statsService.post(endpointHit);
+        EndpointHitDto saved = statClient.post(endpointHit);
         log.info("Информация по запросу на endpoint '{}' успешно отправлена: {}", request.getRequestURI(), saved);
     }
 
     private Event receiveData(Event event) {
         log.info("receiveData({})", event);
         try {
-            List<ViewStatsDto> viewStatsDto = statsService.get(
+            List<ViewStatsDto> viewStatsDto = statClient.receive(
                     LocalDateTime.now().minusYears(1),
                     LocalDateTime.now().plusDays(1),
                     new String[]{"/events/" + event.getId()},
-                    "true"
+                    true
             );
             long views = 0L;
             if (viewStatsDto != null && !viewStatsDto.isEmpty()) {

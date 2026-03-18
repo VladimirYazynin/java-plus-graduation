@@ -3,7 +3,7 @@ package ru.practicum.ewm.exception;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-import ru.practicum.ewm.ErrorResponse;
+import ru.practicum.ewm.dto.ErrorResponse;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;

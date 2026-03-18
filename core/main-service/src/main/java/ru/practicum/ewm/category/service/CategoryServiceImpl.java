@@ -22,6 +22,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class CategoryServiceImpl implements CategoryService {
+
     private final CategoryRepository repository;
     private final EventRepository eventRepository;
     private final CategoryMapper mapper;

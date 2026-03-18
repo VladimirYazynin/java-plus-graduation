@@ -1,7 +1,7 @@
 package ru.practicum.ewm.mapper;
 
 import org.springframework.stereotype.Component;
-import ru.practicum.ewm.EndpointHitDto;
+import ru.practicum.ewm.dto.EndpointHitDto;
 import ru.practicum.ewm.model.EndpointHit;
 
 import java.time.LocalDateTime;

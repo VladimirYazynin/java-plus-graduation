@@ -1,7 +1,7 @@
 package ru.practicum.ewm.mapper;
 
 import org.springframework.stereotype.Component;
-import ru.practicum.ewm.ViewStatsDto;
+import ru.practicum.ewm.dto.ViewStatsDto;
 import ru.practicum.ewm.model.ViewStats;
 
 @Component
