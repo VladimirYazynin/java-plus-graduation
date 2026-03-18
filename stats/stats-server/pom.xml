@@ -9,7 +9,7 @@
         <version>0.0.1-SNAPSHOT</version>
     </parent>
 
-    <artifactId>service</artifactId>
+    <artifactId>stats-server</artifactId>
 
     <properties>
         <mapstruct.version>1.5.5.Final</mapstruct.version>

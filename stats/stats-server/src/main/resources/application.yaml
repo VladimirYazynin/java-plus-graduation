@@ -14,6 +14,8 @@ spring:
         serviceId: config-server
 
 eureka:
+  instance:
+    prefer-ip-address: true
   client:
     registerWithEureka: true
     serviceUrl:
