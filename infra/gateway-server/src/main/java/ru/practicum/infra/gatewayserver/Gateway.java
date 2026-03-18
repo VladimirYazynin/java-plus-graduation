@@ -1,4 +1,4 @@
-package ru.practicum.infra.gateway;
+package ru.practicum.infra.gatewayserver;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
