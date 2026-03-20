@@ -8,6 +8,7 @@ import lombok.Data;
 @Data
 @AllArgsConstructor
 public class CommentDto {
+
     @NotNull
     private Long eventId;
     @Size(min = 10, max = 256)
