@@ -33,7 +33,7 @@ public class StatsServiceImpl implements StatsService {
     }
 
     @Override
-    public List<ViewStatsDto> receive(LocalDateTime start, LocalDateTime end, String[] uris, Boolean isUnique) {
+    public List<ViewStatsDto> receive(LocalDateTime start, LocalDateTime end, List<String> uris, Boolean isUnique) {
         log.info("receive({}, {}, {}, {})", start, end, uris, isUnique);
         if (start.isAfter(end)) {
             throw new DateTimeFormatException("Неверно указаны данные даты и времени");

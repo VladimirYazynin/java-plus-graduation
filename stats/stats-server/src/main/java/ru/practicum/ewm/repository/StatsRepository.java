@@ -18,7 +18,7 @@
                 "WHERE h.uri IN :uris AND h.timestamp BETWEEN :start AND :end " +
                 "GROUP BY h.app, h.uri " +
                 "ORDER BY COUNT(h.ip) DESC")
-        List<ViewStats> getByUris(@Param("uris") String[] uris,
+        List<ViewStats> getByUris(@Param("uris") List<String> uris,
                                   @Param("start") LocalDateTime start,
                                   @Param("end") LocalDateTime end);
 
@@ -43,7 +43,7 @@
                 "WHERE h.uri IN :uris AND h.timestamp BETWEEN :start AND :end " +
                 "GROUP BY h.app, h.uri " +
                 "ORDER BY COUNT(DISTINCT h.ip) DESC")
-        List<ViewStats> getDistinctByUris(@Param("uris") String[] uris,
+        List<ViewStats> getDistinctByUris(@Param("uris") List<String> uris,
                                           @Param("start") LocalDateTime start,
                                           @Param("end") LocalDateTime end);
     }
