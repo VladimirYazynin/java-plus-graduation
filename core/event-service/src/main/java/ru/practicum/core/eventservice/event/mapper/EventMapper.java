@@ -2,48 +2,45 @@ package ru.practicum.core.eventservice.event.mapper;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
-import ru.practicum.ewm.category.mapper.CategoryMapper;
-import ru.practicum.ewm.category.repository.CategoryRepository;
-import ru.practicum.ewm.comment.mapper.CommentMapper;
-import ru.practicum.ewm.comment.repository.CommentRepository;
+import ru.practicum.core.eventservice.category.mapper.CategoryMapper;
+import ru.practicum.core.eventservice.category.model.Category;
+import ru.practicum.core.eventservice.event.model.Location;
+import ru.practicum.core.eventservice.event.model.Event;
+import ru.practicum.core.interactionapi.dto.CommentShort;
 import ru.practicum.core.interactionapi.dto.EventFullDto;
 import ru.practicum.core.interactionapi.dto.EventShortDto;
+import ru.practicum.core.interactionapi.dto.LocationDto;
 import ru.practicum.core.interactionapi.dto.NewEventDto;
 import ru.practicum.core.interactionapi.dto.UpdateEventAdminRequest;
 import ru.practicum.core.interactionapi.dto.UpdateEventUserRequest;
-import ru.practicum.core.eventservice.event.model.Event;
-import ru.practicum.core.interactionapi.exception.NotFoundException;
-import ru.practicum.ewm.user.mapper.UserMapper;
+import ru.practicum.core.interactionapi.dto.UserShortDto;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 
 @Component
 @RequiredArgsConstructor
 public class EventMapper {
+
     private final CategoryMapper categoryMapper;
-    private final CategoryRepository categoryRepository;
-    private final UserMapper userMapper;
-    private final CommentRepository commentRepository;
-    private final CommentMapper commentMapper;
     private final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
-    public Event toEvent(NewEventDto event) {
+    public Event toEvent(NewEventDto event, Category category, Location location) {
         return new Event(
                 event.getId(),
                 event.getAnnotation(),
-                categoryRepository.findById(event.getCategory())
-                        .orElseThrow(() -> new NotFoundException("Категория не найдена")),
+                category,
                 event.getDescription(),
                 LocalDateTime.parse(event.getEventDate(), formatter),
-                event.getLocation(),
+                location,
                 event.getPaid(),
                 event.getParticipantLimit(),
                 event.getRequestModeration(),
                 event.getTitle());
     }
 
-    public EventFullDto toEventFullDto(Event event) {
+    public EventFullDto toEventFullDto(Event event, UserShortDto user, List<CommentShort> comments) {
         String publishedOn = null;
         if (event.getPublishedOn() != null) {
             publishedOn = event.getPublishedOn().format(formatter);
@@ -54,29 +51,29 @@ public class EventMapper {
                 categoryMapper.toCategoryDto(event.getCategory()),
                 event.getDescription(),
                 event.getEventDate().format(formatter),
-                event.getLocation(),
+                new LocationDto(event.getLocation().getLat(), event.getLocation().getLon()),
                 event.getPaid(),
                 event.getParticipantLimit(),
                 event.getRequestModeration(),
                 event.getTitle(),
                 event.getConfirmedRequests(),
                 event.getCreatedOn().format(formatter),
-                userMapper.toUserShortDto(event.getInitiator()),
+                user,
                 publishedOn,
                 event.getState(),
                 event.getViews(),
-                commentRepository.getCommentsByEventId(event.getId())
+                comments
         );
     }
 
-    public EventShortDto toEventShortDto(Event event) {
+    public EventShortDto toEventShortDto(Event event, UserShortDto user) {
         return new EventShortDto(
                 event.getId(),
                 event.getAnnotation(),
                 categoryMapper.toCategoryDto(event.getCategory()),
                 event.getConfirmedRequests(),
                 event.getEventDate().format(formatter),
-                userMapper.toUserShortDto(event.getInitiator()),
+                user,
                 event.getPaid(),
                 event.getTitle(),
                 event.getViews());

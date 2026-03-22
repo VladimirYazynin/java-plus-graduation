@@ -22,11 +22,11 @@ public class EventFullDto {
     private Integer participantLimit;
     private Boolean requestModeration;
     private String title;
-    private Integer confirmedRequests;
+    private Long confirmedRequests;
     private String createdOn;
     private UserShortDto initiator;
     private String publishedOn;
     private State state;
-    private Integer views;
+    private Long views;
     private List<CommentShort> comments;
 }

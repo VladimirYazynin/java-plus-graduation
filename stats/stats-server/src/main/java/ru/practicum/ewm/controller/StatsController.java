@@ -36,7 +36,7 @@ public class StatsController implements StatContract {
     @GetMapping("/stats")
     public List<ViewStatsDto> receive(@RequestParam @DateTimeFormat(pattern = PATTERN) LocalDateTime start,
                                       @RequestParam @DateTimeFormat(pattern = PATTERN) LocalDateTime end,
-                                      @RequestParam(required = false) String[] uris,
+                                      @RequestParam(required = false) List<String> uris,
                                       @RequestParam(defaultValue = "false") Boolean unique) {
         return service.receive(start, end, uris, unique);
     }

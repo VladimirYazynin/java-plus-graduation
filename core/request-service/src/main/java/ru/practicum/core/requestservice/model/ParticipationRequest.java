@@ -1,10 +1,18 @@
 package ru.practicum.core.requestservice.model;
 
-import jakarta.persistence.*;
-import lombok.*;
-import ru.practicum.ewm.enums.State;
-import ru.practicum.ewm.event.model.Event;
-import ru.practicum.ewm.user.model.User;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import ru.practicum.core.interactionapi.enums.State;
 
 import java.time.LocalDateTime;
 
@@ -15,16 +23,15 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @NoArgsConstructor
 public class ParticipationRequest {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     private LocalDateTime created;
-    @ManyToOne
-    @JoinColumn(name = "event_id")
-    private Event event;
-    @ManyToOne
-    @JoinColumn(name = "user_id")
-    private User requester;
+    @Column(name = "event_id")
+    private Long event;
+    @Column(name = "user_id")
+    private Long requester;
     @Enumerated(EnumType.STRING)
     private State status;
 }

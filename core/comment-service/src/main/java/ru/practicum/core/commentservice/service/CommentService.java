@@ -8,6 +8,7 @@ import java.util.List;
 
 
 public interface CommentService {
+
     FullCommentDto addCommentToEventByUser(Long authorId, CommentDto newCommentDto);
 
     FullCommentDto updateCommentByUser(Long authorId, Long commentId, CommentDto updatedCommentDto);

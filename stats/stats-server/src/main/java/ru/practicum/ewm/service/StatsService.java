@@ -10,5 +10,5 @@ public interface StatsService {
 
     EndpointHitDto send(EndpointHitDto endpointHit);
 
-    List<ViewStatsDto> receive(LocalDateTime start, LocalDateTime end, String[] uris, Boolean isUnique);
+    List<ViewStatsDto> receive(LocalDateTime start, LocalDateTime end, List<String> uris, Boolean isUnique);
 }

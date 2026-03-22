@@ -5,7 +5,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import ru.practicum.core.interactionapi.dto.UserShortDto;
 import ru.practicum.core.interactionapi.exception.DataViolationException;
+import ru.practicum.core.interactionapi.exception.DuplicatedDataException;
 import ru.practicum.core.interactionapi.exception.NotFoundException;
 import ru.practicum.core.interactionapi.dto.UserDto;
 import ru.practicum.core.userservice.mapper.UserMapper;
@@ -19,6 +21,7 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
+
     private final UserRepository repository;
     private final UserMapper mapper;
 
@@ -26,6 +29,7 @@ public class UserServiceImpl implements UserService {
     @Transactional
     public UserDto create(UserDto user) {
         log.info("create({})", user);
+        validateEmailExist(user.getEmail());
         User thisUser = mapper.toUser(user);
         if (repository.existsByName(thisUser.getName())) {
             throw new DataViolationException("Пользователь уже существует");
@@ -52,11 +56,23 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    public UserShortDto getUserById(Long userId) {
+        return mapper.toUserShortDto(repository.findById(userId)
+                .orElseThrow(() -> new NotFoundException(String.format("Пользователь с id= %d не найден", userId))));
+    }
+
+    @Override
     @Transactional
     public void delete(Long userId) {
         log.info("delete({})", userId);
         User thisUser = repository.findById(userId).orElseThrow(() -> new NotFoundException("Пользователь не найден"));
         repository.delete(thisUser);
         log.info("Администратором удалён пользователь: {}", thisUser);
+    }
+
+    private void validateEmailExist(String email) {
+        if (repository.existsByEmail(email)) {
+            throw new DuplicatedDataException(String.format("Email - %s уже используется", email));
+        }
     }
 }

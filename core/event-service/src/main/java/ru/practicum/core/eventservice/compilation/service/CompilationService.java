@@ -7,6 +7,7 @@ import ru.practicum.core.interactionapi.dto.UpdateCompilationDto;
 import java.util.List;
 
 public interface CompilationService {
+
     CompilationDto create(NewCompilationDto compilation);
 
     CompilationDto update(Long compId, UpdateCompilationDto compilation);

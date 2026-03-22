@@ -8,6 +8,7 @@ import ru.practicum.core.eventservice.compilation.model.Compilation;
 
 @Repository
 public interface CompilationRepository extends JpaRepository<Compilation, Long> {
+
     boolean existsByTitle(String title);
 
     Page<Compilation> findAllByPinned(Boolean pinned, Pageable page);

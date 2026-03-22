@@ -1,4 +1,5 @@
-server.port: 0
+server:
+  port: 0
 
 spring:
   output:
@@ -11,14 +12,17 @@ spring:
     password: main
   sql:
     init:
-      mode: always
-      schema-locations: classpath:schema.sql
+      mode: never
   jpa:
+    show-sql: true
+    defer-datasource-initialization: true
     hibernate:
-      ddl-auto: none
-      properties:
-        hibernate.format_sql: true
-        hibernate.show_sql: true
+      ddl-auto: create
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+        jdbc.time_zone: UTC
 
 logging:
   level:

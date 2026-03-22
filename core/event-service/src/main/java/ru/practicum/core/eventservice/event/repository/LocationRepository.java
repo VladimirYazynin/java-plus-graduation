@@ -7,4 +7,5 @@ import ru.practicum.core.eventservice.event.model.Location;
 @Repository
 public interface LocationRepository extends JpaRepository<Location, Long> {
 
+    Location findByLatAndLon(Float lat, Float lon);
 }

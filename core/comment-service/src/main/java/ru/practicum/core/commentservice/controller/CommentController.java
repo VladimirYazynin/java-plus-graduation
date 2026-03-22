@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
+import ru.practicum.core.interactionapi.contract.CommentContract;
 import ru.practicum.core.interactionapi.dto.CommentDto;
 import ru.practicum.core.interactionapi.dto.CommentShort;
 import ru.practicum.core.interactionapi.dto.FullCommentDto;
@@ -20,7 +21,7 @@ import java.util.List;
 @Slf4j
 @RestController
 @RequiredArgsConstructor
-public class CommentController {
+public class CommentController implements CommentContract {
 
     private final CommentService service;
 

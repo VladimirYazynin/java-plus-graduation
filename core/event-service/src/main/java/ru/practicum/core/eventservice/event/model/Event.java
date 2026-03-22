@@ -14,7 +14,6 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import ru.practicum.core.eventservice.category.model.Category;
 import ru.practicum.core.interactionapi.enums.State;
-import ru.practicum.ewm.user.model.User;
 
 import java.time.LocalDateTime;
 
@@ -28,37 +27,55 @@ import static jakarta.persistence.GenerationType.IDENTITY;
 @AllArgsConstructor
 @NoArgsConstructor
 public class Event {
+
     @Id
     @GeneratedValue(strategy = IDENTITY)
     private Long id;
+
+    @Column(name = "annotation", length = 2000)
     private String annotation;
+
     @ManyToOne
     @JoinColumn(name = "category_id")
     private Category category;
+
+    @Column(name = "description", length = 7000)
     private String description;
+
     @Column(name = "event_date")
     private LocalDateTime eventDate;
+
     @ManyToOne
     @JoinColumn(name = "location_id")
     private Location location;
+
     private Boolean paid;
+
     @Column(name = "participant_limit")
     private Integer participantLimit;
+
     @Column(name = "request_moderation")
     private Boolean requestModeration;
+
+    @Column(name = "title", nullable = false, length = 120)
     private String title;
+
     @Column(name = "confirmed_requests")
-    private Integer confirmedRequests;
+    private Long confirmedRequests;
+
     @Column(name = "created_on")
     private LocalDateTime createdOn;
-    @ManyToOne
-    @JoinColumn(name = "user_id")
-    private User initiator;
+
+    @Column(name = "user_id")
+    private Long initiator;
+
     @Column(name = "published_on")
     private LocalDateTime publishedOn;
+
     @Enumerated(STRING)
     private State state;
-    private Integer views;
+
+    private Long views;
 
     public Event(Long id,
                  String annotation,

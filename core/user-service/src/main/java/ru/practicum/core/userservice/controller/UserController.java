@@ -1,6 +1,7 @@
 package ru.practicum.core.userservice.controller;
 
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -11,7 +12,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+import ru.practicum.core.interactionapi.contract.UserContract;
 import ru.practicum.core.interactionapi.dto.UserDto;
+import ru.practicum.core.interactionapi.dto.UserShortDto;
 import ru.practicum.core.userservice.service.UserService;
 
 import java.util.List;
@@ -22,7 +25,8 @@ import static org.springframework.http.HttpStatus.NO_CONTENT;
 @RestController
 @RequestMapping("/admin/users")
 @RequiredArgsConstructor
-public class UserController {
+public class UserController implements UserContract {
+
     private final UserService service;
 
     @PostMapping
@@ -36,6 +40,12 @@ public class UserController {
                              @RequestParam(defaultValue = "0") int from,
                              @RequestParam(defaultValue = "10") int size) {
         return service.get(ids, from, size);
+    }
+
+    @Override
+    @GetMapping("/{userId}")
+    public UserShortDto getUserById(@PathVariable("userId") @Positive Long userId) {
+        return service.getUserById(userId);
     }
 
     @DeleteMapping("/{userId}")
