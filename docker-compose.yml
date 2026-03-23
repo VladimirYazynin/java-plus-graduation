@@ -32,7 +32,7 @@ services:
   kafka:
     image: confluentinc/confluent-local:7.4.3
     hostname: kafka
-    container_name: kafka
+    container_name: ewm-kafka
     ports:
       - "9092:9092"
       - "9101:9101"
