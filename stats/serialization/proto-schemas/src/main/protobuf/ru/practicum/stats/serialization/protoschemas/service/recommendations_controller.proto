@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package service;
+package stats.service.dashboard;
 
 import "ru/practicum/stats/serialization/protoschemas/message/recommendation_requests.proto";
 

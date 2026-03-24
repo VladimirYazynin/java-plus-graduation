@@ -26,14 +26,13 @@ public class EventSimilarityKafkaProducer {
     }
 
     private void send(EventSimilarityAvro message) {
-        kafkaTemplate.send(topicName, message)
-                .whenComplete((result, exception) -> {
-                    if (exception == null) {
-                        log.debug("Оценка сходства успешно отправлена: message={}", message);
-                    } else {
-                        log.error("Ошибка при отправке оценки сходства в топик '{}': message={}",
-                                topicName, message, exception);
-                    }
-                });
+        try {
+            kafkaTemplate.send(topicName, message).get();
+            log.debug("Оценка сходства успешно отправлена: message={}", message);
+        } catch (Exception e) {
+            log.error("Ошибка при отправке оценки сходства в топик '{}': message={}",
+                    topicName, message, e);
+            throw new RuntimeException(e);
+        }
     }
 }

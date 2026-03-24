@@ -34,7 +34,12 @@ public class KafkaProducer {
                 .setActionType(caseActionTypeProto(request.getActionType()))
                 .setTimestamp(protoTimestampToAvro(request.getTimestamp()))
                 .build();
-        producer.send(userActionTopic, message);
+        try {
+            producer.send(userActionTopic, message).get();
+        } catch (Exception e) {
+            log.error("Ошибка при отправке сообщения в топик '{}'", userActionTopic, e);
+            throw new RuntimeException(e);
+        }
     }
 
     private ActionTypeAvro caseActionTypeProto(ActionTypeProto actionType) {

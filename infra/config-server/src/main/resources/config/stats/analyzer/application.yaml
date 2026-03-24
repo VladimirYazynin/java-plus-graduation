@@ -1,6 +1,4 @@
-grpc:
-  server:
-    port: 0
+server.port: 0
 
 spring:
   output:
@@ -52,3 +50,7 @@ logging:
   level:
     org.springframework.cloud.loadbalancer: WARN
     com.netflix.discovery: WARN
+
+grpc:
+  server:
+    port: 0

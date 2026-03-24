@@ -40,13 +40,27 @@ import ru.practicum.core.interactionapi.exception.NotFoundException;
 import ru.practicum.core.interactionapi.exception.ValidationException;
 import ru.practicum.ewm.dto.EndpointHitDto;
 import ru.practicum.ewm.dto.ViewStatsDto;
+import ru.practicum.service.dashboard.RecommendedEventProto;
+import ru.practicum.stats.statsclient.AnalyzerClient;
+import ru.practicum.stats.statsclient.CollectorClient;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
-import static ru.practicum.core.interactionapi.enums.State.*;
+import static ru.practicum.core.interactionapi.enums.State.CANCELED;
+import static ru.practicum.core.interactionapi.enums.State.CONFIRMED;
+import static ru.practicum.core.interactionapi.enums.State.PENDING;
+import static ru.practicum.core.interactionapi.enums.State.PUBLISHED;
+import static ru.practicum.core.interactionapi.enums.State.PUBLISH_EVENT;
 
 @Slf4j
 @Service
@@ -63,6 +77,8 @@ public class EventServiceImpl implements EventService {
     private final RequestClient requestClient;
     private final UserClient userClient;
     private final CommentClient commentClient;
+    private final AnalyzerClient analyzerClient;
+    private final CollectorClient collectorClient;
 
     @Override
     @Transactional
@@ -98,11 +114,13 @@ public class EventServiceImpl implements EventService {
         thisEvent.setCreatedOn(LocalDateTime.now());
         thisEvent.setInitiator(user.getId());
         thisEvent.setState(PENDING);
-        thisEvent.setViews(0L);
+//        thisEvent.setViews(0L);
         thisEvent.setConfirmedRequests(0L);
         Event savedEvent = eventRepository.save(thisEvent);
         log.debug("Событие сохранено: {}", savedEvent);
-        return eventMapper.toEventFullDto(savedEvent, user, null);
+        EventFullDto response = eventMapper.toEventFullDto(savedEvent, user, null);
+        response.setRating(0d);
+        return response;
     }
 
     @Override
@@ -248,14 +266,14 @@ public class EventServiceImpl implements EventService {
         );
         List<Event> events = eventsPage.getContent();
         fillConfirmedRequestsInModels(events);
-        Map<Long, Long> views = getAmountOfViews(events);
+//        Map<Long, Long> views = getAmountOfViews(events);
         log.debug("Собираем событие для ответа");
         return events.stream()
                 .map(event -> {
                     UserShortDto user = userClient.getUserById(event.getInitiator());
                     List<CommentShort> comments = commentClient.getCommentsForEvent(event.getId());
                     EventFullDto eventDto = eventMapper.toEventFullDto(event, user, comments);
-                    eventDto.setViews(views.getOrDefault(eventDto.getId(), 0L));
+//                    eventDto.setViews(views.getOrDefault(eventDto.getId(), 0L));
                     return eventDto;
                 })
                 .collect(Collectors.toCollection(ArrayList::new));
@@ -331,41 +349,81 @@ public class EventServiceImpl implements EventService {
         List<Event> events = eventRepository.findAllByFilters(
                 text, categoryIds, paid, rangeStart, rangeEnd, onlyAvailable, PageRequest.of(from, size));
         fillConfirmedRequestsInModels(events);
-        Map<Long, Long> views = getAmountOfViews(events);
-        try {
-            statClient.post(EndpointHitDto.builder()
-                    .app("event-service")
-                    .uri(request.getRequestURI())
-                    .ip(request.getRemoteAddr())
-                    .timestamp(LocalDateTime.now().format(formatter))
-                    .build());
-        } catch (Exception e) {
-            log.error("Не удалось отправить запрос о сохранении на сервер статистики");
-        }
+//        Map<Long, Long> views = getAmountOfViews(events);
+//        try {
+//            statClient.post(EndpointHitDto.builder()
+//                    .app("event-service")
+//                    .uri(request.getRequestURI())
+//                    .ip(request.getRemoteAddr())
+//                    .timestamp(LocalDateTime.now().format(formatter))
+//                    .build());
+//        } catch (Exception e) {
+//            log.error("Не удалось отправить запрос о сохранении на сервер статистики");
+//        }
         log.debug("Собираем события для ответа");
         return events.stream().
                 map(event -> {
                     UserShortDto user = userClient.getUserById(event.getInitiator());
                     EventShortDto dto = eventMapper.toEventShortDto(event, user);
-                    dto.setViews(views.getOrDefault(event.getId(), 0L));
+//                    dto.setViews(views.getOrDefault(event.getId(), 0L));
                     return dto;
                 })
                 .collect(Collectors.toCollection(ArrayList::new));
     }
 
     @Override
-    public EventFullDto getById(Long eventId, HttpServletRequest request) {
-        log.debug("getById({})", eventId);
+    @Transactional(readOnly = true)
+    public List<EventFullDto> getRecommendation(Long userId, Integer max) {
+        List<Long> eventIds = analyzerClient.getRecommendationsForUser(userId, max)
+                .map(RecommendedEventProto::getEventId)
+                .toList();
+        List<Event> events = eventRepository.findAllByIdIn(eventIds);
+        fillConfirmedRequestsInModels(events);
+        return events.stream()
+                .map(event -> {
+                    EventFullDto eventDto = eventMapper.toEventFullDto(
+                            event,
+                            userClient.getUserById(event.getInitiator()),
+                            null);
+                    eventDto.setRating(analyzerClient.getInteractionsCount(List.of(event.getId()))
+                            .map(RecommendedEventProto::getScore)
+                            .findFirst()
+                            .orElse(0.0));
+                    return eventDto;
+                })
+                .collect(Collectors.toCollection(ArrayList::new));
+    }
+
+    @Override
+    public EventFullDto getById(Long eventId, HttpServletRequest request, Long userId) {
         Event event = eventSearch(eventId);
         if (event.getState() != PUBLISHED) {
             throw new NotFoundException("Не найдено");
         }
-        sendData(request);
-        Event savedEvent = receiveData(event);
-        UserShortDto user = userClient.getUserById(savedEvent.getInitiator());
-        List<CommentShort> comments = commentClient.getCommentsForEvent(savedEvent.getId());
-        log.debug("Возвращено событие по запросу пользователя: {}", savedEvent);
-        return eventMapper.toEventFullDto(savedEvent, user, comments);
+//        sendData(request);
+//        Event savedEvent = receiveData(event);
+        collectorClient.collectUserAction(userId, eventId, "ACTION_VIEW", Instant.now());
+        UserShortDto user = userClient.getUserById(event.getInitiator());
+        List<CommentShort> comments = commentClient.getCommentsForEvent(event.getId());
+        log.debug("Возвращено событие по запросу пользователя: {}", user);
+        EventFullDto response = eventMapper.toEventFullDto(event, user, comments);
+        response.setRating(analyzerClient.getInteractionsCount(List.of(event.getId()))
+                .map(RecommendedEventProto::getScore)
+                .findFirst()
+                .orElse(0.0));
+        return response;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public void addLike(Long eventId, Long userId) {
+        eventRepository.findById(eventId)
+                .orElseThrow(() -> new NotFoundException(String.format("Не найдено событие с id: %d", eventId)));
+        if (requestClient.checkRegistration(eventId, userId)) {
+            collectorClient.collectUserAction(userId, eventId, "ACTION_LIKE", Instant.now());
+        } else {
+            throw new NotFoundException("Пользователь не регистрировался на данное событие");
+        }
     }
 
     @Override
@@ -479,11 +537,11 @@ public class EventServiceImpl implements EventService {
                     List.of("/events/" + event.getId()),
                     true
             );
-            long views = 0L;
-            if (viewStatsDto != null && !viewStatsDto.isEmpty()) {
-                views = viewStatsDto.getFirst().getHits() != null ? viewStatsDto.getFirst().getHits() : 0L;
-            }
-            event.setViews(views);
+//            long views = 0L;
+//            if (viewStatsDto != null && !viewStatsDto.isEmpty()) {
+//                views = viewStatsDto.getFirst().getHits() != null ? viewStatsDto.getFirst().getHits() : 0L;
+//            }
+//            event.setViews(views);
             Event savedEvent = eventRepository.save(event);
             log.info("Сохранено событие с подсчётом просмотров: {}", savedEvent);
             return savedEvent;

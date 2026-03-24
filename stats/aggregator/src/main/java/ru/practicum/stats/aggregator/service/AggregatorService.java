@@ -69,8 +69,9 @@ public class AggregatorService {
                                                               Double newWeight, Double oldWeight) {
         Map<Long, Double> selfDotProducts = scalarResultMatrix.computeIfAbsent(eventId, k -> new HashMap<>());
         double currentSelfProduct = selfDotProducts.getOrDefault(eventId, 0.0);
-        double weightDelta = (oldWeight == null) ? newWeight : newWeight - oldWeight;
-        selfDotProducts.put(eventId, currentSelfProduct + weightDelta);
+        double oldW = (oldWeight == null) ? 0.0 : oldWeight;
+        double selfDelta = newWeight * newWeight - oldW * oldW;
+        selfDotProducts.put(eventId, currentSelfProduct + selfDelta);
         return updateCrossDotProducts(eventId, userId, newWeight, oldWeight);
     }
 
@@ -82,22 +83,19 @@ public class AggregatorService {
                 continue;
             }
             long eventA, eventB;
-            boolean isUpdatedFirst;
             if (updatedEventId < otherEventId) {
                 eventA = updatedEventId;
                 eventB = otherEventId;
-                isUpdatedFirst = true;
             } else {
                 eventA = otherEventId;
                 eventB = updatedEventId;
-                isUpdatedFirst = false;
             }
             Map<Long, Double> otherUserWeights = eventUserWeights.get(otherEventId);
             if (otherUserWeights != null) {
                 Double otherWeight = otherUserWeights.get(userId);
                 if (otherWeight != null) {
                     EventSimilarityAvro similarity = updateDotProductForPair(
-                            eventA, eventB, newWeight, oldWeight, otherWeight, isUpdatedFirst
+                            eventA, eventB, newWeight, oldWeight, otherWeight
                     );
                     if (similarity != null) {
                         updatedSimilarities.add(similarity);
@@ -109,17 +107,11 @@ public class AggregatorService {
     }
 
     private EventSimilarityAvro updateDotProductForPair(long eventA, long eventB, Double newWeight, Double oldWeight,
-                                                        Double otherWeight, boolean isUpdatedFirst) {
+                                                        Double otherWeight) {
         Map<Long, Double> dotProducts = scalarResultMatrix.computeIfAbsent(eventA, k -> new HashMap<>());
         double currentDotProduct = dotProducts.getOrDefault(eventB, 0.0);
         double oldMinWeight = (oldWeight == null) ? 0.0 : Math.min(oldWeight, otherWeight);
-        double weightForMin;
-        if (isUpdatedFirst) {
-            weightForMin = newWeight;
-        } else {
-            weightForMin = otherWeight;
-        }
-        double newMinWeight = Math.min(weightForMin, isUpdatedFirst ? otherWeight : newWeight);
+        double newMinWeight = Math.min(newWeight, otherWeight);
         double dotProductDelta = newMinWeight - oldMinWeight;
         double updatedDotProduct = currentDotProduct + dotProductDelta;
         dotProducts.put(eventB, updatedDotProduct);

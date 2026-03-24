@@ -75,8 +75,6 @@ public class Event {
     @Enumerated(STRING)
     private State state;
 
-    private Long views;
-
     public Event(Long id,
                  String annotation,
                  Category category,

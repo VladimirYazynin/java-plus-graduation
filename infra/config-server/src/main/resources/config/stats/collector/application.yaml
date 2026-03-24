@@ -1,3 +1,9 @@
+server.port: 0
+
+grpc:
+  server:
+    port: 0
+
 collector:
   kafka:
     producer:
@@ -9,7 +15,14 @@ spring:
       bootstrap-servers: "localhost:9092"
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: ru.practicum.stats.serialization.avroschemas.AvroSerializer
+  http:
+    encoding:
+      charset: UTF-8
+      enabled: true
+      force: true
 
-grpc:
-  server:
-    port: 0
+logging:
+  level:
+    org.springframework.cloud.loadbalancer: WARN
+    com.netflix.discovery: WARN
+    collector: DEBUG

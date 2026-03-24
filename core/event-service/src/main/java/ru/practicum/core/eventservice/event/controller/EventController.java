@@ -3,16 +3,9 @@ package ru.practicum.core.eventservice.event.controller;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.format.annotation.DateTimeFormat;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PatchMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseStatus;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import ru.practicum.core.interactionapi.contract.EventContract;
 import ru.practicum.core.interactionapi.dto.EventFullDto;
 import ru.practicum.core.interactionapi.dto.EventRequestStatusUpdateRequest;
@@ -29,6 +22,7 @@ import java.util.List;
 
 import static org.springframework.http.HttpStatus.CREATED;
 
+@Slf4j
 @RestController
 @RequestMapping
 @RequiredArgsConstructor
@@ -98,8 +92,21 @@ public class EventController implements EventContract {
 
     @Override
     @GetMapping("/events/{eventId}")
-    public EventFullDto getById(@PathVariable Long eventId, HttpServletRequest request) {
-        return eventService.getById(eventId, request);
+    public EventFullDto getById(@PathVariable Long eventId,
+                                HttpServletRequest request,
+                                @RequestHeader("X-EWM-USER-ID") Long userId) {
+        return eventService.getById(eventId, request, userId);
+    }
+
+    @GetMapping("/events/recommendations")
+    public List<EventFullDto> getRecommendations(@RequestHeader("X-EWM-USER-ID") Long userId, Integer max) {
+        return eventService.getRecommendation(userId, max);
+    }
+
+    @PutMapping("/events/{eventId}/like")
+    public void addLike(@PathVariable Long eventId, @RequestHeader("X-EWM-USER-ID") Long userId) {
+        log.debug("Поступил запрос на лайк для события");
+        eventService.addLike(eventId, userId);
     }
 
     @Override

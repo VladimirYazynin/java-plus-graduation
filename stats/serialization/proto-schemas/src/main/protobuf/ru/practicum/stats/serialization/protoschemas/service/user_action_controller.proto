@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package service;
+package stats.service.collector;
 
 import "ru/practicum/stats/serialization/protoschemas/message/user_action.proto";
 import "google/protobuf/empty.proto";
