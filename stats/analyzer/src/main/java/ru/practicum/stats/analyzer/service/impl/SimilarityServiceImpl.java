@@ -19,12 +19,15 @@ public class SimilarityServiceImpl implements SimilarityService {
 
     @Override
     public void handleSimilarity(EventSimilarityAvro avro) {
-        log.debug("Создание схожести события: {}", avro);
-        if (eventSimilarityRepository.existsByEventAAndEventB(avro.getEventA(), avro.getEventB())) {
-            log.debug("Запись с eventA: {} и eventB: {} уже есть", avro.getEventA(), avro.getEventB());
-            return;
+        log.debug("Сохранение схожести события: {}", avro);
+        EventSimilarityEntity existing = eventSimilarityRepository
+                .findByEventAAndEventB(avro.getEventA(), avro.getEventB())
+                .orElse(null);
+        if (existing != null) {
+            existing.setScore(avro.getScore());
+            eventSimilarityRepository.save(existing);
+        } else {
+            eventSimilarityRepository.save(eventSimilarityMapper.toEventSimilarityEntity(avro));
         }
-        EventSimilarityEntity similarity = eventSimilarityMapper.toEventSimilarityEntity(avro);
-        eventSimilarityRepository.save(similarity);
     }
 }

@@ -42,6 +42,7 @@ public class KafkaConsumerConfig {
         props.put(ConsumerConfig.CLIENT_ID_CONFIG, userConsumer.getClientId());
         props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, org.apache.kafka.common.serialization.StringDeserializer.class);
         props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, ru.practicum.stats.serialization.avroschemas.deserializer.UserActionDeserializer.class);
+        props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
         props.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, userConsumer.isAutoCommit());
         return new DefaultKafkaConsumerFactory<>(props);
     }
@@ -53,6 +54,7 @@ public class KafkaConsumerConfig {
         props.put(ConsumerConfig.GROUP_ID_CONFIG, similarityConsumer.getGroupId());
         props.put(ConsumerConfig.CLIENT_ID_CONFIG, similarityConsumer.getClientId());
         props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, org.apache.kafka.common.serialization.StringDeserializer.class);
+        props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
         props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, ru.practicum.stats.serialization.avroschemas.deserializer.EventSimilarityDeserializer.class);
         props.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, similarityConsumer.isAutoCommit());
         return new DefaultKafkaConsumerFactory<>(props);

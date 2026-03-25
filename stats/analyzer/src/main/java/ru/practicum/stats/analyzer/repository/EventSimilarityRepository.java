@@ -11,11 +11,14 @@ import ru.practicum.stats.analyzer.model.Recommendation;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 @Repository
 public interface EventSimilarityRepository extends JpaRepository<EventSimilarityEntity, Long> {
+
+    Optional<EventSimilarityEntity> findByEventAAndEventB(long eventA, long eventB);
 
     @Query("""
         SELECT new ru.practicum.stats.analyzer.model.Recommendation(
@@ -104,8 +107,4 @@ public interface EventSimilarityRepository extends JpaRepository<EventSimilarity
     List<NeighbourResult> findNeighboursNative(@Param("primaryIds") Set<Long> primaryIds,
                                                @Param("candidateIds") Set<Long> candidates,
                                                @Param("maxNeighbours") int maxNeighbours);
-
-    @Query("SELECT COUNT(s) > 0 FROM EventSimilarityEntity s " +
-            "WHERE (s.eventA = :eventA AND s.eventB = :eventB) OR (s.eventA = :eventB AND s.eventB = :eventA)")
-    boolean existsByEventAAndEventB(Long eventA, Long eventB);
 }

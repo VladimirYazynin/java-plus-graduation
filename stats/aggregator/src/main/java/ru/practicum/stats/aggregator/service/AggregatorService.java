@@ -69,9 +69,8 @@ public class AggregatorService {
                                                               Double newWeight, Double oldWeight) {
         Map<Long, Double> selfDotProducts = scalarResultMatrix.computeIfAbsent(eventId, k -> new HashMap<>());
         double currentSelfProduct = selfDotProducts.getOrDefault(eventId, 0.0);
-        double oldW = (oldWeight == null) ? 0.0 : oldWeight;
-        double selfDelta = newWeight * newWeight - oldW * oldW;
-        selfDotProducts.put(eventId, currentSelfProduct + selfDelta);
+        double weightDelta = (oldWeight == null) ? newWeight : newWeight - oldWeight;
+        selfDotProducts.put(eventId, currentSelfProduct + weightDelta);
         return updateCrossDotProducts(eventId, userId, newWeight, oldWeight);
     }
 
@@ -79,23 +78,24 @@ public class AggregatorService {
                                                              Double newWeight, Double oldWeight) {
         List<EventSimilarityAvro> updatedSimilarities = new ArrayList<>();
         for (Long otherEventId : eventUserWeights.keySet()) {
-            if (updatedEventId.equals(otherEventId)) {
-                continue;
-            }
+            if (updatedEventId.equals(otherEventId)) continue;
             long eventA, eventB;
+            boolean isUpdatedFirst;
             if (updatedEventId < otherEventId) {
                 eventA = updatedEventId;
                 eventB = otherEventId;
+                isUpdatedFirst = true;
             } else {
                 eventA = otherEventId;
                 eventB = updatedEventId;
+                isUpdatedFirst = false;
             }
             Map<Long, Double> otherUserWeights = eventUserWeights.get(otherEventId);
             if (otherUserWeights != null) {
                 Double otherWeight = otherUserWeights.get(userId);
                 if (otherWeight != null) {
                     EventSimilarityAvro similarity = updateDotProductForPair(
-                            eventA, eventB, newWeight, oldWeight, otherWeight
+                            eventA, eventB, newWeight, oldWeight, otherWeight, isUpdatedFirst
                     );
                     if (similarity != null) {
                         updatedSimilarities.add(similarity);
@@ -106,12 +106,19 @@ public class AggregatorService {
         return updatedSimilarities;
     }
 
-    private EventSimilarityAvro updateDotProductForPair(long eventA, long eventB, Double newWeight, Double oldWeight,
-                                                        Double otherWeight) {
+    private EventSimilarityAvro updateDotProductForPair(long eventA, long eventB,
+                                                        Double newWeight, Double oldWeight,
+                                                        Double otherWeight, boolean isUpdatedFirst) {
         Map<Long, Double> dotProducts = scalarResultMatrix.computeIfAbsent(eventA, k -> new HashMap<>());
         double currentDotProduct = dotProducts.getOrDefault(eventB, 0.0);
         double oldMinWeight = (oldWeight == null) ? 0.0 : Math.min(oldWeight, otherWeight);
-        double newMinWeight = Math.min(newWeight, otherWeight);
+        double weightForMin;
+        if (isUpdatedFirst) {
+            weightForMin = newWeight;
+        } else {
+            weightForMin = otherWeight;
+        }
+        double newMinWeight = Math.min(weightForMin, isUpdatedFirst ? otherWeight : newWeight);
         double dotProductDelta = newMinWeight - oldMinWeight;
         double updatedDotProduct = currentDotProduct + dotProductDelta;
         dotProducts.put(eventB, updatedDotProduct);
@@ -119,16 +126,16 @@ public class AggregatorService {
     }
 
     private EventSimilarityAvro calculateSimilarity(long eventA, long eventB, double dotProduct) {
-        Double magnitudeA = calculateMagnitude(eventA);
-        Double magnitudeB = calculateMagnitude(eventB);
-        if (magnitudeA == null || magnitudeB == null || magnitudeA == 0 || magnitudeB == 0) {
+        Double normA = calculateNorm(eventA);
+        Double normB = calculateNorm(eventB);
+        if (normA == null || normB == null || normA == 0 || normB == 0) {
             return null;
         }
-        double similarity = dotProduct / (magnitudeA * magnitudeB);
+        double similarity = dotProduct / (normA * normB);
         return new EventSimilarityAvro(eventA, eventB, similarity, Instant.now());
     }
 
-    private Double calculateMagnitude(Long eventId) {
+    private Double calculateNorm(Long eventId) {
         Map<Long, Double> selfDotProducts = scalarResultMatrix.get(eventId);
         if (selfDotProducts == null) return null;
         Double selfProduct = selfDotProducts.get(eventId);

@@ -62,7 +62,6 @@ public class EventMapper {
                 publishedOn,
                 event.getState(),
                 0d,
-//                event.getViews(),
                 comments
         );
     }
@@ -78,7 +77,6 @@ public class EventMapper {
                 event.getPaid(),
                 event.getTitle(),
                 0d);
-//                event.getViews());
     }
 
     public UpdateEventUserRequest toUpdateEventUserRequest(UpdateEventAdminRequest event) {

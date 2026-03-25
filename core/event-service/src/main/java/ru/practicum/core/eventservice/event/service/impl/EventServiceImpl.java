@@ -114,7 +114,6 @@ public class EventServiceImpl implements EventService {
         thisEvent.setCreatedOn(LocalDateTime.now());
         thisEvent.setInitiator(user.getId());
         thisEvent.setState(PENDING);
-//        thisEvent.setViews(0L);
         thisEvent.setConfirmedRequests(0L);
         Event savedEvent = eventRepository.save(thisEvent);
         log.debug("Событие сохранено: {}", savedEvent);
@@ -266,14 +265,12 @@ public class EventServiceImpl implements EventService {
         );
         List<Event> events = eventsPage.getContent();
         fillConfirmedRequestsInModels(events);
-//        Map<Long, Long> views = getAmountOfViews(events);
         log.debug("Собираем событие для ответа");
         return events.stream()
                 .map(event -> {
                     UserShortDto user = userClient.getUserById(event.getInitiator());
                     List<CommentShort> comments = commentClient.getCommentsForEvent(event.getId());
                     EventFullDto eventDto = eventMapper.toEventFullDto(event, user, comments);
-//                    eventDto.setViews(views.getOrDefault(eventDto.getId(), 0L));
                     return eventDto;
                 })
                 .collect(Collectors.toCollection(ArrayList::new));
@@ -302,40 +299,6 @@ public class EventServiceImpl implements EventService {
         }
     }
 
-    private Map<Long, Long> getAmountOfViews(List<Event> events) {
-        if (CollectionUtils.isEmpty(events)) {
-            return Collections.emptyMap();
-        }
-        List<String> uris = events.stream()
-                .map(event -> "/events/" + event.getId())
-                .distinct()
-                .collect(Collectors.toList());
-
-        LocalDateTime startTime = LocalDateTime.now().minusDays(1);
-        LocalDateTime endTime = LocalDateTime.now().plusMinutes(5);
-
-        Map<Long, Long> viewsMap = new HashMap<>();
-        try {
-            log.debug("Получение статистики по времени для URI: {} с {} по {}", uris, startTime, endTime);
-            List<ViewStatsDto> stats = statClient.receive(
-                    startTime,
-                    endTime,
-                    uris,
-                    true
-            );
-            log.debug("Получение статистики");
-            if (!CollectionUtils.isEmpty(stats)) {
-                for (ViewStatsDto stat : stats) {
-                    Long eventId = Long.parseLong(stat.getUri().substring("/events/".length()));
-                    viewsMap.put(eventId, stat.getHits());
-                }
-            }
-        } catch (Exception e) {
-            log.error("Не удалось получить статистику");
-        }
-        return viewsMap;
-    }
-
     @Override
     @Transactional(readOnly = true)
     public List<EventShortDto> searchEvents(String text, List<Long> categoryIds, Boolean paid, LocalDateTime rangeStart,
@@ -349,23 +312,11 @@ public class EventServiceImpl implements EventService {
         List<Event> events = eventRepository.findAllByFilters(
                 text, categoryIds, paid, rangeStart, rangeEnd, onlyAvailable, PageRequest.of(from, size));
         fillConfirmedRequestsInModels(events);
-//        Map<Long, Long> views = getAmountOfViews(events);
-//        try {
-//            statClient.post(EndpointHitDto.builder()
-//                    .app("event-service")
-//                    .uri(request.getRequestURI())
-//                    .ip(request.getRemoteAddr())
-//                    .timestamp(LocalDateTime.now().format(formatter))
-//                    .build());
-//        } catch (Exception e) {
-//            log.error("Не удалось отправить запрос о сохранении на сервер статистики");
-//        }
         log.debug("Собираем события для ответа");
         return events.stream().
                 map(event -> {
                     UserShortDto user = userClient.getUserById(event.getInitiator());
                     EventShortDto dto = eventMapper.toEventShortDto(event, user);
-//                    dto.setViews(views.getOrDefault(event.getId(), 0L));
                     return dto;
                 })
                 .collect(Collectors.toCollection(ArrayList::new));
@@ -400,8 +351,6 @@ public class EventServiceImpl implements EventService {
         if (event.getState() != PUBLISHED) {
             throw new NotFoundException("Не найдено");
         }
-//        sendData(request);
-//        Event savedEvent = receiveData(event);
         collectorClient.collectUserAction(userId, eventId, "ACTION_VIEW", Instant.now());
         UserShortDto user = userClient.getUserById(event.getInitiator());
         List<CommentShort> comments = commentClient.getCommentsForEvent(event.getId());
@@ -515,39 +464,5 @@ public class EventServiceImpl implements EventService {
             throw new ValidationException("Событие должно быть не меньше, чем за 2 часа до текущего времени");
         }
         log.info("Валидация даты прошла успешно: {}", date);
-    }
-
-    private void sendData(HttpServletRequest request) {
-        log.info("sendData({})", request);
-        EndpointHitDto endpointHit = new EndpointHitDto();
-        endpointHit.setApp("event");
-        endpointHit.setIp(request.getRemoteAddr());
-        endpointHit.setUri(request.getRequestURI());
-        endpointHit.setTimestamp(LocalDateTime.now().format(formatter));
-        EndpointHitDto saved = statClient.post(endpointHit);
-        log.info("Информация по запросу на endpoint '{}' успешно отправлена: {}", request.getRequestURI(), saved);
-    }
-
-    private Event receiveData(Event event) {
-        log.info("receiveData({})", event);
-        try {
-            List<ViewStatsDto> viewStatsDto = statClient.receive(
-                    LocalDateTime.now().minusYears(1),
-                    LocalDateTime.now().plusDays(1),
-                    List.of("/events/" + event.getId()),
-                    true
-            );
-//            long views = 0L;
-//            if (viewStatsDto != null && !viewStatsDto.isEmpty()) {
-//                views = viewStatsDto.getFirst().getHits() != null ? viewStatsDto.getFirst().getHits() : 0L;
-//            }
-//            event.setViews(views);
-            Event savedEvent = eventRepository.save(event);
-            log.info("Сохранено событие с подсчётом просмотров: {}", savedEvent);
-            return savedEvent;
-        } catch (Exception e) {
-            log.error("Ошибка при получении статистики для события {}", event.getId(), e);
-            return event;
-        }
     }
 }

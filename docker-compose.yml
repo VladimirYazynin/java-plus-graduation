@@ -53,10 +53,15 @@ services:
     depends_on:
       - kafka
     command: "bash -c \
-               'kafka-topics --create --topic stats.user-actions.v1 \
-                            --partitions 1 --replication-factor 1 --if-not-exists \
+               'kafka-topics --delete --topic stats.user-actions.v1 \
+                            --bootstrap-server kafka:29092 --if-exists && \
+               kafka-topics --delete --topic stats.events-similarity.v1 \
+                            --bootstrap-server kafka:29092 --if-exists && \
+               sleep 2 && \
+               kafka-topics --create --topic stats.user-actions.v1 \
+                            --partitions 1 --replication-factor 1 \
                             --bootstrap-server kafka:29092 && \
                kafka-topics --create --topic stats.events-similarity.v1 \
-                            --partitions 1 --replication-factor 1 --if-not-exists \
+                            --partitions 1 --replication-factor 1 \
                             --bootstrap-server kafka:29092'"
     init: true
