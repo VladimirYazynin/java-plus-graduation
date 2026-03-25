@@ -4,10 +4,12 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.kafka.support.SendResult;
 import org.springframework.stereotype.Component;
 import ru.practicum.ewm.stats.avro.EventSimilarityAvro;
 
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 @Slf4j
 @Component
@@ -20,19 +22,16 @@ public class EventSimilarityKafkaProducer {
 
     public void sendSimilarityScores(List<EventSimilarityAvro> messages) {
         log.debug("Отправка {} сообщений в топик '{}'", messages.size(), topicName);
-        for (EventSimilarityAvro message : messages) {
-            send(message);
-        }
-    }
-
-    private void send(EventSimilarityAvro message) {
-        try {
-            kafkaTemplate.send(topicName, message).get();
-            log.debug("Оценка сходства успешно отправлена: message={}", message);
-        } catch (Exception e) {
-            log.error("Ошибка при отправке оценки сходства в топик '{}': message={}",
-                    topicName, message, e);
-            throw new RuntimeException(e);
+        List<CompletableFuture<SendResult<String, EventSimilarityAvro>>> futures = messages.stream()
+                .map(message -> kafkaTemplate.send(topicName, message))
+                .toList();
+        for (CompletableFuture<SendResult<String, EventSimilarityAvro>> future : futures) {
+            try {
+                future.get();
+            } catch (Exception e) {
+                log.error("Ошибка при отправке сообщения в топик '{}'", topicName, e);
+                throw new RuntimeException(e);
+            }
         }
     }
 }
