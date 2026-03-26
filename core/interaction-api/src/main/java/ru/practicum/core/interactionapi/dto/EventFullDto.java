@@ -27,6 +27,6 @@ public class EventFullDto {
     private UserShortDto initiator;
     private String publishedOn;
     private State state;
-    private Long views;
+    private Double rating;
     private List<CommentShort> comments;
 }

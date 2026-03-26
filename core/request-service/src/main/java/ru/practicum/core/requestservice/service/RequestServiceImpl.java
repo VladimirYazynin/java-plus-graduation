@@ -4,7 +4,11 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import ru.practicum.core.interactionapi.dto.*;
+import ru.practicum.core.interactionapi.dto.EventFullDto;
+import ru.practicum.core.interactionapi.dto.EventRequestStatusUpdateRequest;
+import ru.practicum.core.interactionapi.dto.EventRequestStatusUpdateResult;
+import ru.practicum.core.interactionapi.dto.ParticipationRequestDto;
+import ru.practicum.core.interactionapi.dto.UserShortDto;
 import ru.practicum.core.interactionapi.enums.State;
 import ru.practicum.core.requestservice.client.EventClient;
 import ru.practicum.core.requestservice.client.UserClient;
@@ -14,7 +18,9 @@ import ru.practicum.core.interactionapi.exception.NotFoundException;
 import ru.practicum.core.requestservice.mapper.RequestMapper;
 import ru.practicum.core.requestservice.model.ParticipationRequest;
 import ru.practicum.core.requestservice.repository.RequestRepository;
+import ru.practicum.stats.statsclient.CollectorClient;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -22,7 +28,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import static ru.practicum.core.interactionapi.enums.State.*;
+import static ru.practicum.core.interactionapi.enums.State.CANCELED;
+import static ru.practicum.core.interactionapi.enums.State.CONFIRMED;
+import static ru.practicum.core.interactionapi.enums.State.PENDING;
+import static ru.practicum.core.interactionapi.enums.State.PUBLISHED;
+import static ru.practicum.core.interactionapi.enums.State.REJECTED;
 
 @Slf4j
 @Service
@@ -33,6 +43,7 @@ public class RequestServiceImpl implements RequestService {
     private final RequestMapper requestMapper;
     private final EventClient eventClient;
     private final UserClient userClient;
+    private final CollectorClient collectorClient;
 
     @Override
     @Transactional
@@ -60,6 +71,7 @@ public class RequestServiceImpl implements RequestService {
         State status = event.getRequestModeration() ? PENDING : CONFIRMED;
         request.setStatus(event.getParticipantLimit() == 0 ? CONFIRMED : status);
         ParticipationRequest savedRequest = requestRepository.save(request);
+        collectorClient.collectUserAction(userId, eventId, "ACTION_REGISTER", Instant.now());
         log.info("Запрос создан: {}", savedRequest);
         return requestMapper.toParticipationRequestDto(savedRequest);
     }
@@ -135,5 +147,11 @@ public class RequestServiceImpl implements RequestService {
         ParticipationRequest savedRequest = requestRepository.save(request);
         log.info("Заявка на участие в событии отменена: {}", savedRequest);
         return requestMapper.toParticipationRequestDto(savedRequest);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public boolean checkRegistration(Long eventId, Long userId) {
+        return requestRepository.existsByEventAndRequester(eventId, userId);
     }
 }

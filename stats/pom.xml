@@ -16,6 +16,11 @@
     <modules>
         <module>dto</module>
         <module>stats-server</module>
+        <module>aggregator</module>
+        <module>analyzer</module>
+        <module>collector</module>
+        <module>serialization</module>
+        <module>stats-client</module>
     </modules>
 
     <dependencies>

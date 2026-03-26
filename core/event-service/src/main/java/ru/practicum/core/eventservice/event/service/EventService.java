@@ -31,7 +31,11 @@ public interface EventService {
                                      LocalDateTime rangeEnd, Boolean onlyAvailable, String sort, Integer from,
                                      Integer size, HttpServletRequest request);
 
-    EventFullDto getById(Long eventId, HttpServletRequest request);
+    EventFullDto getById(Long eventId, HttpServletRequest request, Long userId);
+
+    List<EventFullDto> getRecommendation(Long userId, Integer max);
+
+    void addLike(Long eventId, Long userId);
 
     EventFullDto getEventById(Long eventId);
 

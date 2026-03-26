@@ -67,4 +67,10 @@ public class RequestController implements RequestContract {
     public ParticipationRequestDto cancel(@PathVariable Long userId, @PathVariable Long requestId) {
         return requestService.cancel(userId, requestId);
     }
+
+    @Override
+    @GetMapping("/requests/{userId}/{eventId}/confirmed")
+    public Boolean checkRegistration(@PathVariable Long eventId, @PathVariable Long userId) {
+        return requestService.checkRegistration(eventId, userId);
+    }
 }

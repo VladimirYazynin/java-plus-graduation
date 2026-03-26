@@ -1,0 +1,56 @@
+server.port: 0
+
+spring:
+  output:
+    ansi:
+      enabled: always
+  datasource:
+    driver-class-name: org.postgresql.Driver
+    url: jdbc:postgresql://localhost:6541/stat
+    username: stat
+    password: stat
+  sql:
+    init:
+      mode: never
+  jpa:
+    show-sql: true
+    defer-datasource-initialization: true
+    hibernate:
+      ddl-auto: create
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+        jdbc.time_zone: UTC
+  kafka:
+    user-consumer:
+      bootstrap-servers: localhost:9092
+      group-id: user-group
+      client-id: user-consumer-1
+      auto-commit: false
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: ru.practicum.stats.serialization.avroschemas.deserializer.UserActionAvroDeserializer
+      topic-user-actions: stats.user-actions.v1
+    similarity-consumer:
+      bootstrap-servers: localhost:9092
+      group-id: similarity-group
+      client-id: similarity-consumer-1
+      auto-commit: false
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: ru.practicum.stats.serialization.avroschemas.deserializer.EventSimilarityAvroDeserializer
+      topic-events-similarity: stats.events-similarity.v1
+
+analyzer:
+  weights:
+    view: 0.4
+    register: 0.8
+    like: 1.0
+
+logging:
+  level:
+    org.springframework.cloud.loadbalancer: WARN
+    com.netflix.discovery: WARN
+
+grpc:
+  server:
+    port: 0

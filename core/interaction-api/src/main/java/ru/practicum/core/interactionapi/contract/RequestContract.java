@@ -37,4 +37,7 @@ public interface RequestContract {
 
     @PatchMapping("/users/{userId}/requests/{requestId}/cancel")
     ParticipationRequestDto cancel(@PathVariable Long userId, @PathVariable Long requestId);
+
+    @GetMapping("/requests/{userId}/{eventId}/confirmed")
+    Boolean checkRegistration(@PathVariable Long eventId, @PathVariable Long userId);
 }

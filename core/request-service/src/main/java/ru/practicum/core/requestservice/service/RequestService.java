@@ -20,4 +20,6 @@ public interface RequestService {
     EventRequestStatusUpdateResult updateStatusByEvent(Long eventId, EventRequestStatusUpdateRequest request);
 
     ParticipationRequestDto cancel(Long userId, Long requestId);
+
+    boolean checkRegistration(Long userId, Long eventId);
 }

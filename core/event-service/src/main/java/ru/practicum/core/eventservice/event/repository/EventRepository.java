@@ -17,6 +17,8 @@ public interface EventRepository extends JpaRepository<Event, Long> {
 
     boolean existsByCategory(Category category);
 
+    List<Event> findAllByIdIn(List<Long> eventIds);
+
     @Query("""
                 SELECT e
                 FROM Event AS e
